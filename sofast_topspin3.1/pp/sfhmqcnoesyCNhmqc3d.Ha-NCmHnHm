@@ -1,0 +1,296 @@
+;sfhmqcnoesyCNhmqc3d.Ha-NCmHnHm: simultaneous 3D hmqc-noesy-CNhmqc for  Haro(F1)-NCm(F2)HnHm(F3)
+;Youlin Xia on 05/05/2016
+
+;3D SOFAST-NOESY delivers high sensitivity and resolution to protein NMR.
+;P. Rossi, Y. Xia, N. Khanra, G. Veglia, and C.G. Kalodimos	 
+;Accepted by JBNMR (2016)
+
+/*
+cnst8: =36*sfo3. cnst8 (for 15N) 
+TD(F2) <= L1
+
+two spectra will be acquired:
+
+1: Caro(t1) NOE  N(t2)-Hn(t3)
+2: Caro(t1) NOE Cm(t2)-Hm(t3)
+
+*/
+
+
+;$CLASS=HighRes
+;$DIM=3D
+;$TYPE=
+;$SUBTYPE=
+;$COMMENT=
+
+prosol relations=<triple>
+
+#include <Avance.incl>
+#include <Delay.incl>
+#include <Grad.incl>
+
+"p4=p3*2"
+"p19=500"
+"p22=p21*2"
+"d11=30m"
+"d13=4u"
+"d14=4.0m"   ;for 13C
+"d15=5.2m"   ;for 15N
+
+"d0=3u"
+"in0 =inf1/2"		;cnst8 must be less than swC
+
+"d20=0u"
+"d30=0u"
+"in20 =inf2/2"		;cnst8 must be less than swC
+"in30=1s/(2*cnst8)"   	;cnst8 = 30 * sfo3, 30 ppm of spectral width for 15N
+
+"l1 = (d14-(1-0.638)*(p21-p3) -p19 -d16 -8u)*2/(in30-in20)+1"	;TD(F2) <= L1
+"TAU1 = l1*0.1"	;to show L1
+
+"cnst2=5.0"
+"cnst3=90"
+"p41=7.2/(cnst2*bf1/1000000)" /*  PC9  pulse length  */
+"p42=4.875/(cnst2*bf1/1000000)" /* REBURP pulse length  */
+
+"spw25=plw1*(pow((p1/p41)/0.125,2))" /* PC9  power level  */
+	;"sp25=pl1-20*log((p1/p41)/0.125)/log(10)" /* PC9  power level  */
+"spoff25=0"  		/*  PC9  offset */
+
+"spw26=plw1*(pow((p1*2/p42)/0.0798,2))"   /* REBURP power level  */
+	;"sp26=pl1-20*log((p1*2/p42)/0.0798)/log(10)"   /* REBURP power level  */
+"spoff26=spoff25"			 /* REBURP offset */
+
+
+"spw31=4*plw1*(pow((cnst3/90.0)*(p1/p41)/0.125,2))" /* PC9  power level  */
+	;"sp31=pl1-20*log((cnst3*2/90.0)*(p1/p41)/0.125)/log(10)" /* PC9  power level  */
+"spoff31=0"  /*  PC9  offset */
+
+"DELTA=p4"
+"DELTA3=1s/(2*cnst4)-p16-d16-p41*0.5"
+"DELTA4=p41*0.5+d0*2+p4"
+
+"TAU=d8-p21-p16*3-0.5m-14u-p11" 	
+
+#define w3 (p1*0.231 ph7 d19*2 p1*0.692 ph7 d19*2 p1*1.462 ph7 d19*2 p1*1.462 ph8 d19*2 p1*0.692 ph8 d19*2 p1*0.231 ph8):f1 
+"d44=d19*2-(p1*0.087 + p1*0.206)*0.5"
+"d43=d19*2-(p1*0.206 + p1*0.413)*0.5"
+"d42=d19*2-(p1*0.413 + p1*0.778)*0.5"
+"d41=d19*2-(p1*0.778 + p1*1.491)*0.5"
+"d40=d19*2-(p1*1.491 + p1*1.491)*0.5"
+#define w5p (p1*0.087 ph7 d44 p1*0.206 ph7 d43 p1*0.413 ph7 d42 p1*0.778 ph7 d41 p1*1.491 ph7 d40 p1*1.491 ph8 d41 p1*0.778 ph8 d42 p1*0.413 ph8 d43 p1*0.206 ph8 d44 p1*0.087 ph8):f1
+
+aqseq 321
+
+1 d11 ze
+2 d11 do:f2 do:f3
+3 20u pl0:f1 pl2:f2 pl3:f3 BLKGRAD
+  d1
+  10u UNBLKGRAD
+
+
+
+;for t2 dimension
+  "d32 = d20*2 - p3*0.637*2"
+  if "d32 < 0"
+   { 
+   "d32 = 0"
+   }
+  "d33 = d30*2 - p21*0.637*2"
+  if "d33 < 0" 
+   { 
+   "d33 = 0"
+   }
+
+  "d34 = d15-d14 + 0.5*(p22-p4+d33-d32)"		;d34 > 0.5*p41
+  "d35 = d34-p41*0.5"
+  "d36 = d14-p19-d16-8u"
+  "d37 = d15 -d34 - p19- d16 -8u"			;d37 should be > 0   
+  if "d32 == 0"
+   { 
+   "d37=d36-p21"
+   "d38=d37-p22-p4"
+   }	;1st point
+
+  5u fq=cnst21(bf ppm):f1 fq=cnst22(bf ppm):f2 ;set 13C to center of 13C freq of aromatci ring [125ppm]
+  (p3 ph1):f2
+  p16:gp1
+  200u
+
+  ;HMQC1
+  (p41:sp25 ph10):f1
+  d0
+  (p4 ph1):f2
+  d0
+  p16:gp1
+  d16 
+
+  (center (p42:sp26 ph6):f1 (DELTA3 p3 ph3 p3 ph4 DELTA3):f2 )
+
+  p16:gp1
+  d16 
+  
+  ;(p41:sp25 ph1):f1
+
+  DELTA4 pl1:f1
+  (p1 ph1):f1
+  4u pl0:f1 fq=0:f1 
+  (p11:sp1 ph8):f1
+  4u
+
+;NOESY
+  TAU BLKGRAD
+  5u fq=0:f2	;return back to o2p [16ppm]
+  10u UNBLKGRAD
+  (p21 ph1):f3  
+  p16*3:gp3
+  0.5m
+
+;2nd CNHMQC
+  4u pl12:f2
+  4u cpd2:f2
+#ifdef hard   
+  4u pl0:f1
+  (p11:sp1 ph8):f1
+  4u
+  4u pl1:f1
+  
+  (p1 ph1):f1 
+  d34
+#else
+  (p41:sp31 ph1):f1 
+  d35
+#endif  
+  4u do:f2
+   		     
+  4u
+  p19:gp2 
+#ifdef hard   
+  d16 pl2:f2
+#else
+  d16 pl1:f1 pl2:f2
+#endif  
+        	     
+  if "d32 > 0"
+  {
+  (center w3 (d36 p3 ph5 d32 p3 ph1 d36):f2 (d37 p21 ph5 d33 p21 ph9 d37):f3)
+  }
+  else
+  {
+  (center w3 (d36 p3 ph5 d32 p3 ph1 d36):f2 (d37 p21 ph5 DELTA p22 ph2 DELTA p21 ph9 d38):f3)
+  }
+  
+  p19:gp2       	     
+  d16			     
+  4u pl12:f2 pl16:f3 
+  
+  4u cpd2:f2
+  d34 
+    
+  go=2 ph31 cpd3:f3
+  d11 do:f2 do:f3 mc #0 to 2 
+    ;for topspin2.0
+     F1PH(rd20 & rd30 & rp5 & ip10, id0) 
+     F2PH(ip5, id20 & id30)
+
+     ;for topspin3.0
+     ;F1PH(calph(ph10, +90), caldel(d0, +in0))
+     ;F2PH(calph(ph5, +90), caldel(d20, +in20) & caldel(d30, +in30))
+
+4u BLKGRAD
+TAU1
+exit
+
+
+
+ph1 =0
+ph2 =1
+ph3 =0 2
+ph4 =0 0 2 2 
+ph6 =0 0 0 0 1 1 1 1
+ph5 =0 0 0 0 0 0 0 0 2 2 2 2 2 2 2 2
+ph7 =0
+ph8 =2
+#ifdef hard   
+ph9 =0
+#else
+ph9 =2
+#endif  
+ph10=0
+
+ph31=0 2 2 0 2 0 0 2 2 0 0 2 0 2 2 0
+
+
+;pl1 : f1 channel - power level for pulse (default)
+;pl12: f2 channel - power level for pulse (default)
+;pl16: f3 channel - power level for CPD/BB decoupling
+;sp29: f1 channel - power level for shaped 90 degree pulse
+;sp31: f1 channel - power level for shaped 90 degree pulse
+;spnam29: Pc9_4_90.1000 with a consin-modulation 
+;spnam31: Pc9_4_90.1000 with a consin-modulation 
+;p1 : f1 channel -  90 degree high power pulse
+;p2 : f1 channel - 180 degree high power pulse
+;p3 : f2 channel -  90 degree high power pulse
+;p4 : f2 channel - 180 degree high power pulse
+;p16: homospoil/gradient pulse                         [1 msec]
+;p19: homospoil/gradient pulse                         [0.3 msec]
+;p41: f1 channel -   90 degree shaped pulse
+;d0 : incremented delay (F1 in 3D)                     [3 usec]
+;d1 : relaxation delay; 1-5 * T1
+;d2 : 1/((2J)XH)
+;d8 : mixing time
+;d11: delay for disk I/O                               [30 msec]
+;d13: short delay                                      [4 usec]
+;d16: delay for homospoil/gradient recovery
+;d17: fixed delay
+;d18: run time delay given by the pulse sequence
+;d19: delay for binomial water suppression
+;     d19 = (1/(2*d)), d = distance of next null (in Hz)
+;d22: run time delay given by the pulse sequence
+;d23: run time delay given by the pulse sequence
+;d24: run time delay given by the pulse sequence
+;d25: run time delay given by the pulse sequence
+;d26: run time delay given by the pulse sequence
+;d27: run time delay given by the pulse sequence
+;d28: run time delay given by the pulse sequence
+;d32: run time delay given by the pulse sequence
+;d33: run time delay given by the pulse sequence
+;d34: run time delay given by the pulse sequence
+;d35: run time delay given by the pulse sequence
+;d36: run time delay given by the pulse sequence
+;d37: run time delay given by the pulse sequence
+;d38: run time delay given by the pulse sequence
+;cnst2: excitation bandwidth [5ppm]
+;cnst3: flipping angle [~110]
+;cnst4: aromatic 1JCH [~160]
+;cnst8: 15N spectral width in Hz [=36*sfo3]
+;cnst21: center of aromatic 1H  chemical shifts [8.5]
+;cnst22: center of aromatic 13C chemical shifts [125]
+;o1p:    center of methyl 1H  chemical shifts [4.7]
+;o2p:    center of methyl 13C chemical shifts [16]
+;inf1: 1/SW(H) = 2 * DW(H)
+;in0: 1/(2 * SW(H)) = DW(H)
+;in20: 1s/(2 * cnst1) = DW(H)
+;l1:   maximum TD2 value allowable
+;NS: 8*n
+;DS: 8*n
+;td1: number of experiments in F1 * 2
+;td2: number of experiments in F2
+;FnMODE: States-TPPI (or TPPI) in F1 & F2
+;cpd2: decoupling according to sequence defined by cpdprg2 
+;pcpd2: f2 channel - 90 degree pulse for decoupling sequence
+;cpdprg2: f2 channel [bi_garp_2pl]
+;cpd3: decoupling according to sequence defined by cpdprg3 
+;pcpd3: f3 channel - 90 degree pulse for decoupling sequence
+;cpdprg3: f3 channel [bi_garp_2pl.2]
+
+
+;for z-only gradients:
+;gpz1: 25%
+;gpz2: 35%
+;gpz3: 30%
+
+;use gradient files:   
+;gpnam1: SMSQ10.100
+;gpnam2: SMSQ10.100
+;gpnam3: SMSQ10.100

@@ -1,0 +1,194 @@
+;sfhmqcnoesyNhmqc3d.Ca-NHn: 3D HMQC-NOESY-HMQC for Ca(F1)- N(F2)Hn(F3)
+;H-Ca(t1)-H -NOE -H-N(t2)-H(t3):
+;Youlin Xia on 05/05/2016
+
+prosol relations=<triple>
+
+#include <Avance.incl>
+#include <Delay.incl>
+#include <Grad.incl>
+
+"d11=30m"
+
+
+"in0 =inf1/2"
+"in10=inf2/2"
+"d0=0u"
+"d10=0u"
+
+
+"TAU=d8-p3-p16-0.5m" 	
+
+"d14=1s/(cnst4*2)"	;cnst4=160
+"d15=1s/(cnst5*2)"	;cnst5=95
+
+"p41=7.2/(cnst2*bf1/1000000)" /*  PC9  pulse length  */
+"p42=4.875/(cnst2*bf1/1000000)" /* REBURP pulse length  */
+
+	;"spw25=plw1*(pow((p1/p41)/0.125,2))"
+"sp25=pl1-20*log((p1/p41)/0.125)/log(10)" /* PC9  power level  */
+"spoff25=bf1*(cnst21/1000000)-o1"  /*  PC9  offset */
+
+	;"spw26=plw1*(pow((p1*2/p42)/0.0798,2))"
+"sp26=pl1-20*log((p1*2/p42)/0.0798)/log(10)"   /* REBURP power level  */
+"spoff26=spoff25"  		/*  PC9  offset */
+
+	;"spw27=plw1*(pow((p1*(cnst3/90)/p41)/0.125,2))"
+"sp27=pl1-20*log((cnst3/90.0)*(p1/p41)/0.125)/log(10)" /* PC9  power level  */
+"spoff27=bf1*(cnst1/1000000)-o1"  /*  PC9  offset */
+
+	;"spw28=plw1*(pow((p1*2/p42)/0.0798,2))"
+"sp28=pl1-20*log((p1*2/p42)/0.0798)/log(10)"   /* REBURP power level  */
+"spoff28=spoff27"  		/*  PC9  offset */
+
+
+"DELTA1=d15-p16-d16-p41*0.5"
+"DELTA2=p41*0.5-de-4u"
+"DELTA3=d14-p16-d16-p41*0.5"
+"DELTA4=p41*0.5"
+
+aqseq 321
+
+
+1 d11 ze
+2 d11 do:f3
+3 d1 pl0:f1 pl2:f2 pl3:f3
+
+  10u UNBLKGRAD
+  
+  (p3 ph1):f2
+  p16:gp3
+  200u
+
+  "d20 = d0*2 - p3*0.637*2"
+  "if (d20 < 0) { d20 = 0; }"
+  
+  "d21 = d10*2 - p21*0.637*2"
+  "if (d21 < 0) { d21 = 0; }"
+
+  ;HMQC1
+  (p41:sp25 ph1):f1
+  p16:gp1
+  d16 
+
+  (center (p42:sp26 ph5):f1 (DELTA3 p3 ph3 d20 p3 ph4 DELTA3):f2 )
+
+  p16:gp1
+  d16 
+  
+  (p41:sp25 ph1):f1
+
+  ;DELTA4 pl1:f1
+  ;(p1 ph1)
+  ;4u pl0:f1
+
+  ;(p11:sp1 ph9:r):f1
+ 
+  ;mixing
+  TAU   
+  (p21 ph1):f3
+  p16:gp3
+  0.5m pl0:f2
+    
+  ;HMQC2
+  
+  (p41:sp27 ph1):f1
+  p16:gp1
+  d16
+
+  (center (p42:sp28 ph8):f1 (p8:sp13 ph1):f2 (DELTA1 p21 ph6 d21 p21 ph7 DELTA1):f3 )
+
+
+  DELTA2
+  p16:gp1
+  d16 pl16:f3
+  4u BLKGRAD
+    
+  go=2 ph31 cpd3:f3
+  d11 do:f3 mc #0 to 2 
+     ;for topspin2.0
+     F1PH(rd10 & rp6 & ip3, id0) 
+     F2PH(ip6, id10)
+
+     ;for topspin3.0
+     ;F1PH(calph(ph3, +90), caldel(d0, +in0)) 
+     ;F2PH(calph(ph6, +90), caldel(d10, +in10)) 
+exit
+
+
+ph1 =0
+ph2 =1
+ph3 =0 2
+ph4 =0 0 0 0 2 2 2 2
+ph5 =0
+ph6 =0 0 2 2
+ph7 =0
+ph8 =0
+ph9 =2
+ph31=0 2 2 0 2 0 0 2
+
+
+
+;pl1 : f1 channel - power level for pulse (default)
+;pl2 : f2 channel - power level for pulse (default)
+;pl12: f2 channel - power level for CPD/BB decoupling
+;sp13: f2 channel - shaped pulse 180 degree (adiabatic)
+;sp25: f1 channel - power level for shaped  90 degree pulse
+;sp26: f1 channel - power level for shaped 180 degree pulse
+;sp27: f1 channel - power level for shaped  90 degree pulse
+;sp28: f1 channel - power level for shaped 180 degree pulse
+;spnam25: Pc9_4_90.1000
+;spnam26: Reburp.1000
+;spnam27: Pc9_4_90.1000
+;spnam28: Reburp.1000
+;p1 : f1 channel -  90 degree high power pulse
+;p2 : f1 channel - 180 degree high power pulse
+;p3 : f2 channel -  90 degree high power pulse
+;p4 : f2 channel - 180 degree high power pulse
+;p8:  f2 channel - 180 degree shaped pulse for inversion (adiabatic)
+;p16: homospoil/gradient pulse                         [1 msec]
+;p41: f1 channel -   90 degree shaped pulse
+;p42: f1 channel -  180 degree shaped pulse
+;d0 : incremented delay (F1 in 3D)                     [3 usec]
+;d1 : relaxation delay; 1-5 * T1
+;d2 : 1/((2J)XH)
+;d8 : mixing time
+;d10: incremented delay (F2 in 3D)                     [3 usec]
+;d11: delay for disk I/O                               [30 msec]
+;d14: 1/(2JCH)                                         [3.7 msec]
+;d16: delay for homospoil/gradient recovery
+;d21: run time delay given by the pulse sequence
+;cnst1: center of 1H freq of HN [8.5ppm] 
+;cnst2: 1H excitation bandwidth [5]
+;cnst3: flipping angle of the 2nd HMQC[110]
+;cnst4: 1JCH of aromatic ring [125]
+;cnst5: 1JNH [95]
+;cnst21: center of 1H freq of aromatic ring [8.5ppm] 
+;o1p:    center of methyl 1H  chemical shifts [4.7]
+;o2p:    center of aromatic 13C chemical shifts [125]
+
+;inf1: 1/SW(H) = 2 * DW(H)
+;inf2: 1/SW(X) = 2 * DW(X)
+;in0: 1/(2 * SW(H)) = DW(H)
+;nd0: 2
+;in10: 1/(2 * SW(X)) = DW(X)
+;nd10: 2
+;NS: 8 * n
+;DS: 8
+;td1: number of experiments in F1
+;td2: number of experiments in F2
+;FnMODE: States-TPPI (or TPPI) in F1
+;FnMODE: States-TPPI (or TPPI) in F2
+;cpd3: decoupling according to sequence defined by cpdprg3
+;pcpd3: f3 channel - 90 degree pulse for decoupling sequence
+;cpdprg3: f3 channel - bi_garp_2pl
+
+
+;for z-only gradients:
+;gpz1:  55%
+;gpz3:  30%
+
+;use gradient files:   
+;gpnam1: SMSQ10.100
+;gpnam3: SMSQ10.100
+
